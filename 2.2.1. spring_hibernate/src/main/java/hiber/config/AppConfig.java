@@ -1,6 +1,5 @@
 package hiber.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -8,39 +7,17 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
+import java.util.Properties;
 
 @Configuration
+@EnableTransactionManagement
 @ComponentScan(value = "hiber")
 public class AppConfig {
-
-   @Autowired
-   private DataSource dataSource;
-
-   @Bean
-   public EntityManagerFactory entityManagerFactory() {
-      LocalContainerEntityManagerFactoryBean emFactoryBean = new LocalContainerEntityManagerFactoryBean();
-      emFactoryBean.setPersistenceUnitName("myPersistenceUnit");
-      emFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
-      emFactoryBean.afterPropertiesSet();
-
-      return emFactoryBean.getObject();
-   }
-
-   @Bean
-   public EntityManager entityManager() {
-      return entityManagerFactory().createEntityManager();
-   }
-
-   @Bean
-   public JpaTransactionManager transactionManager() {
-      JpaTransactionManager transactionManager = new JpaTransactionManager();
-      transactionManager.setEntityManagerFactory(entityManagerFactory());
-      return transactionManager;
-   }
 
    @Bean
    public DataSource dataSource() {
@@ -50,5 +27,25 @@ public class AppConfig {
       dataSource.setUsername("root");
       dataSource.setPassword("GlowStone:89");
       return dataSource;
+   }
+
+   @Bean
+   public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+      LocalContainerEntityManagerFactoryBean emFactoryBean = new LocalContainerEntityManagerFactoryBean();
+      emFactoryBean.setDataSource(dataSource);
+      emFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+      emFactoryBean.setPackagesToScan("hiber.model"); // Замените на путь к вашим классам сущностей
+
+      Properties jpaProperties = new Properties();
+      jpaProperties.setProperty("hibernate.show_sql", "true");
+      jpaProperties.setProperty("hibernate.hbm2ddl.auto", "update");
+
+      emFactoryBean.setJpaProperties(jpaProperties);
+      return emFactoryBean;
+   }
+
+   @Bean
+   public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
+      return new JpaTransactionManager(emf);
    }
 }
