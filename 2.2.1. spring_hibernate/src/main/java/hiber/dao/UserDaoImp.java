@@ -1,9 +1,14 @@
 package hiber.dao;
 
+import hiber.config.AppConfig;
 import hiber.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -20,7 +25,14 @@ public class UserDaoImp implements UserDao {
    @Transactional
    @Override
    public void add(User user) {
-      em.persist(user);
+      PlatformTransactionManager transactionManager = new AnnotationConfigApplicationContext(AppConfig.class).
+              getBean(PlatformTransactionManager.class);
+      TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+      try {
+         em.persist(user);
+      } catch (Exception ex) {
+         transactionManager.rollback(transactionStatus);
+      }
    }
 
    @Override
@@ -33,12 +45,26 @@ public class UserDaoImp implements UserDao {
    @Transactional
    @Override
    public void editEmail(Long id, String newEmail) {
-      em.find(User.class, id).setEmail(newEmail);
+      PlatformTransactionManager transactionManager = new AnnotationConfigApplicationContext(AppConfig.class).
+              getBean(PlatformTransactionManager.class);
+      TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+      try {
+         em.find(User.class, id).setEmail(newEmail);
+      } catch (Exception ex) {
+         transactionManager.rollback(transactionStatus);
+      }
    }
 
    @Transactional
    @Override
    public void drop(Long id) {
-      em.remove(em.find(User.class, id));
+      PlatformTransactionManager transactionManager = new AnnotationConfigApplicationContext(AppConfig.class).
+              getBean(PlatformTransactionManager.class);
+      TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+      try {
+         em.remove(em.find(User.class, id));
+      } catch (Exception ex) {
+         transactionManager.rollback(transactionStatus);
+      }
    }
 }
